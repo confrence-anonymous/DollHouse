@@ -163,8 +163,6 @@ python train_agent.py
 > * Trains a SINDy dynamics model from your data
 > * Creates vectorized environments
 > * Trains an RL agent using PPO
-> * Logs metrics to Weights & Biases (optional)
-> * Saves the final model and environment configuration
 
 ---
 
