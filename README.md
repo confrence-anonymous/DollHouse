@@ -162,7 +162,7 @@ python train_agent.py
 >
 > * Trains a SINDy dynamics model from your data
 > * Creates vectorized environments
-> * Trains an RL agent using PPO, A2C, DQN, or SAC
+> * Trains an RL agent using PPO
 > * Logs metrics to Weights & Biases (optional)
 > * Saves the final model and environment configuration
 
@@ -192,6 +192,6 @@ MIT License. Feel free to use, modify, and contribute!
 
 ## 📈 Acknowledgements
 
-Built using [stable-baselines3](https://github.com/DLR-RM/stable-baselines3), [PySINDy](https://github.com/dynamicslab/pysindy), and [WandB](https://wandb.ai/).
+Built using [stable-baselines3](https://github.com/DLR-RM/stable-baselines3) and [PySINDy](https://github.com/dynamicslab/pysindy).
 
 
