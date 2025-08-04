@@ -9,7 +9,7 @@ Dollhouse is a simulation framework designed to train reinforcement learning (RL
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/Dollhouse.git
+git clone https://github.com/your-username/Dollhouse.git](https://github.com/confrence-anonymous/DollHouse.git
 cd Dollhouse
 ```
 
