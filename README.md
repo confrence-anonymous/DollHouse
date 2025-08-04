@@ -38,63 +38,118 @@ pip install -r requirements.txt
 You can train an RL agent using a simple Python script like this:
 
 ```python
-# train_agent.py
 import os
-from dollhouse_env import DollhouseThermalEnv
+import time
+import torch
+import numpy as np
+from datetime import datetime
+
+from stable_baselines3 import PPO
+from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.monitor import Monitor
+
 from train_sindy_model import train_sindy_model
-from train_rl_agent import create_vectorized_env, train_rl_agent
+from dollhouse_env import DollhouseThermalEnv
 
-# Path to CSV data used to fit the SINDy model
-data_file = "path/to/your/dataset.csv"
 
-# Train the SINDy model from data
-sindy_model = train_sindy_model(file_path=data_file)
+def make_env(seed, sindy_model, env_params):
+    def _init():
+        params = env_params.copy()
+        params["random_seed"] = seed
+        params["sindy_model"] = sindy_model
+        env = DollhouseThermalEnv(**params)
+        env = Monitor(env)
+        return env
+    return _init
 
-# Define environment parameters
-env_params = {
-    "episode_length": 2880,
-    "time_step_seconds": 30,
-    "heating_setpoint": 26.0,
-    "cooling_setpoint": 28.0,
-    "external_temp_pattern": "sine",
-    "setpoint_pattern": "schedule",
-    "reward_type": "balanced",
-    "energy_weight": 1.0,
-    "comfort_weight": 1.0,
-    "use_reward_shaping": True,
-    "random_start_time": True,
-    "shaping_weight": 0.3,
-}
 
-# Create a directory for monitor logs
-monitor_dir = "logs/monitor"
-os.makedirs(monitor_dir, exist_ok=True)
-
-# Create a vectorized environment with 4 parallel envs
-vec_env = create_vectorized_env(
-    sindy_model=sindy_model,
-    env_params=env_params,
-    n_envs=4,
-    seed=0,
-    monitor_dir=monitor_dir,
-    vec_env_type="subproc",
-    normalize=True,
-)
-
-# Train an RL agent (e.g., PPO)
-model, model_path = train_rl_agent(
-    vec_env=vec_env,
-    n_envs=4,
-    algorithm="ppo",
+def main(
+    data_file,
+    output_dir="results",
     total_timesteps=1_000_000,
     seed=0,
-    log_dir="logs",
-    wandb_project="dollhouse-demo",
-    wandb_entity="your-wandb-username",
-    use_wandb=True,
-)
+):
+    # Set seeds for reproducibility
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
 
-print(f"✅ Training complete. Model saved at: {model_path}")
+    # Create output dir
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_dir = os.path.join(output_dir, f"ppo_{timestamp}")
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Train SINDy model from CSV
+    print(f"Training SINDy model from {data_file}...")
+    sindy_model = train_sindy_model(file_path=data_file)
+
+    # Define env parameters
+    env_params = {
+        "episode_length": 2880,  # 24 hours
+        "time_step_seconds": 30,
+        "heating_setpoint": 26.0,
+        "cooling_setpoint": 28.0,
+        "external_temp_pattern": "sine",
+        "setpoint_pattern": "schedule",
+        "reward_type": "balanced",
+        "energy_weight": 1.0,
+        "comfort_weight": 1.0,
+        "use_reward_shaping": True,
+        "random_start_time": True,
+        "shaping_weight": 0.3,
+    }
+
+    # Create environment (single env wrapped in DummyVecEnv)
+    env = DummyVecEnv([make_env(seed, sindy_model, env_params)])
+
+    # Check device
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+
+    # Create PPO model
+    model = PPO(
+        "MlpPolicy",
+        env,
+        verbose=1,
+        seed=seed,
+        device=device,
+        tensorboard_log=os.path.join(output_dir, "tensorboard"),
+    )
+
+    # Train
+    print(f"Training PPO for {total_timesteps} timesteps...")
+    start = time.time()
+    model.learn(total_timesteps=total_timesteps)
+    duration = time.time() - start
+    print(f"Training finished in {duration:.2f} seconds")
+
+    # Save model
+    model_path = os.path.join(output_dir, "ppo_dollhouse_model")
+    model.save(model_path)
+    print(f"Model saved at: {model_path}")
+
+    env.close()
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Train PPO on Dollhouse environment")
+    parser.add_argument("--data", type=str, required=True, help="CSV file path for SINDy training")
+    parser.add_argument("--output", type=str, default="results", help="Output directory")
+    parser.add_argument("--timesteps", type=int, default=1_000_000, help="Training timesteps")
+    parser.add_argument("--seed", type=int, default=0, help="Random seed")
+
+    args = parser.parse_args()
+
+    main(
+        data_file=args.data,
+        output_dir=args.output,
+        total_timesteps=args.timesteps,
+        seed=args.seed,
+    )
+
 ```
 
 Then run it from the terminal:
