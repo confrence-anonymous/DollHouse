@@ -18,7 +18,7 @@ cd Dollhouse
 Using `conda`:
 
 ```bash
-conda create -n dollhouse python=3.10 -y
+conda create -n dollhouse 
 conda activate dollhouse
 pip install -r requirements.txt
 ```
@@ -33,7 +33,7 @@ pip install -r requirements.txt
 
 ---
 
-### 3. Train an RL Agent (Minimal Example)
+### 3. Train an RL Agent 
 
 You can train an RL agent using a simple Python script like this:
 
