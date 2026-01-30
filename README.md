@@ -7,10 +7,10 @@ Dollhouse is a simulation framework designed to train reinforcement learning (RL
 ## 🖼️ Dollhouse Images
 
 ### Front View
-![Dollhouse Front View](dollhouse_frontview.jpeg)
+![Dollhouse Front View](dollhouse_frontview.jpg)
 
 ### Side View
-![Dollhouse Side View](dollhouse_sideview.jpeg)
+![Dollhouse Side View](dollhouse_sideview.jpg)
 
 ---
 ## 🚀 Getting Started
